@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>場所の詳細情報</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      text-align: center;
+    }
+    #details {
+      text-align: left;
+      margin-top: 20px;
+    }
+    .review {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>場所の詳細情報</h1>
+  <div id="details">Loading details...</div>
+
+  <!-- Google Maps API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAv5hL1qczznMmmfyl8CeFR9lzUw11L7SY&libraries=places"></script>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAv5hL1qczznMmmfyl8CeFR9lzUw11L7SY",
+      authDomain: "app-dokoiku.firebaseapp.com",
+      databaseURL: "https://app-dokoiku-default-rtdb.firebaseio.com",
+      projectId: "app-dokoiku",
+      storageBucket: "app-dokoiku.appspot.com",
+      messagingSenderId: "912841762379",
+      appId: "1:912841762379:web:a705234b5ab0c0bdc38fce",
+      measurementId: "G-70PMDBJE39"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // URLパラメータからdocumentIdとgenreを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const documentId = urlParams.get('id');
+    const genre = urlParams.get('genre') || 'videos_restaurant';
+
+    // Firebaseからジャンルに基づいて場所情報を取得
+    async function getPlaceDetailsFromFirebase() {
+      const detailsContainer = document.getElementById('details');
+
+      try {
+        // ジャンルパラメータでコレクションを動的に指定
+        const docRef = doc(db, genre, documentId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const placeData = docSnap.data();
+          const placeName = placeData.placeName;
+
+          detailsContainer.innerHTML = `
+            <h2>${placeName}</h2>
+            <p>緯度: ${placeData.latitude}</p>
+            <p>経度: ${placeData.longitude}</p>
+          `;
+
+          // Google Places APIで口コミを取得
+          fetchPlaceReviews(placeName);
+        } else {
+          detailsContainer.innerHTML = '<p>場所のデータが見つかりませんでした。</p>';
+        }
+      } catch (error) {
+        console.error("Error getting document:", error);
+        detailsContainer.innerHTML = '<p>データ取得中にエラーが発生しました。</p>';
+      }
+    }
+
+    // Google Places APIで口コミを取得
+    function fetchPlaceReviews(placeName) {
+      const service = new google.maps.places.PlacesService(document.createElement('div'));
+
+      service.textSearch({ query: placeName }, (results, status) => {
+        const detailsContainer = document.getElementById('details');
+
+        if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+          const placeId = results[0].place_id;
+
+          service.getDetails({ placeId: placeId }, (place, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+              let detailsHTML = `<h2>${place.name}</h2>`;
+              detailsHTML += `<p><strong>評価:</strong> ${place.rating}</p>`;
+              detailsHTML += `<p><strong>住所:</strong> ${place.formatted_address}</p>`;
+
+              if (place.reviews && place.reviews.length > 0) {
+                detailsHTML += '<h3>口コミ:</h3>';
+                place.reviews.slice(0, 3).forEach(review => {
+                  detailsHTML += `
+                    <div class="review">
+                      <p><strong>${review.author_name}</strong> (${review.rating}★)</p>
+                      <p>${review.text}</p>
+                    </div>
+                  `;
+                });
+              } else {
+                detailsHTML += '<p>口コミが見つかりませんでした。</p>';
+              }
+
+              detailsContainer.innerHTML += detailsHTML;
+            } else {
+              detailsContainer.innerHTML += '<p>詳細情報が見つかりませんでした。</p>';
+            }
+          });
+        } else {
+          detailsContainer.innerHTML += '<p>場所が見つかりませんでした。</p>';
+        }
+      });
+    }
+
+    // ページ読み込み時にFirebaseから場所名を取得して口コミを取得
+    window.onload = getPlaceDetailsFromFirebase;
+  </script>
+</body>
+</html>

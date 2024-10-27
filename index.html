@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ジャンル選択</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .genre-select {
+      font-size: 18px;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+    .submit-button {
+      font-size: 18px;
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .submit-button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>ジャンルを選択</h1>
+
+  <!-- ジャンル選択 -->
+  <form id="genre-form" action="display_videos.html" method="GET">
+    <select id="genre-select" name="genre" class="genre-select" required>
+      <option value="videos_restaurant">レストラン</option>
+      <option value="videos_cafe">カフェ</option>
+      <option value="videos_tourist_spot">観光スポット</option>
+      <option value="videos_park">公園</option>
+      <option value="videos_others">その他</option>
+    </select>
+    <br>
+    <button type="submit" class="submit-button">次へ</button>
+  </form>
+
+</body>
+</html>
